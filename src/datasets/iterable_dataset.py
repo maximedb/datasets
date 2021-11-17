@@ -281,6 +281,22 @@ class TakeExamplesIterable(_BaseExamplesIterable):
         return self.ex_iterable.n_shards
 
 
+class FilterExamplesIterable(_BaseExamplesIterable):
+    def __init__(self, ex_iterable: _BaseExamplesIterable, function: Callable):
+        self.ex_iterable = ex_iterable
+        self.function = function
+    
+    def __iter__(self):
+        iterator = iter(self.ex_iterable)
+        for key, example in iterator:
+            if self.function(example):
+                yield key, example
+
+    @property
+    def n_shards(self) -> int:
+        return self.ex_iterable.n_shards
+
+
 def _generate_examples_from_tables_wrapper(generate_tables_fn):
     def wrapper(**kwargs):
         python_formatter = PythonFormatter()
@@ -493,6 +509,22 @@ class IterableDataset(DatasetInfoMixin):
             return {k: v for k, v in example.items() if k not in column_names}
 
         return self.map(remove_fn)
+
+    def filter(self, function: Callable):
+        """
+        Apply a filter function to all the elements so that the dataset only includes examples according to the filter function.
+        Args:
+            function (:obj:`Callable`): Callable with the following signatures:
+                - ``function(example: Union[Dict, Any]) -> bool`` if ``with_indices=False, batched=False``
+        """
+        ex_iterable = FilterExamplesIterable(self._ex_iterable, function)
+        return iterable_dataset(
+            ex_iterable=ex_iterable,
+            info=copy.deepcopy(self._info),
+            split=self._split,
+            format_type=self._format_type,
+            shuffling=copy.deepcopy(self._shuffling),
+        )
 
 
 def iterable_dataset(
