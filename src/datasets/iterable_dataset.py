@@ -512,10 +512,10 @@ class IterableDataset(DatasetInfoMixin):
 
     def filter(self, function: Callable):
         """
-        Apply a filter function to all the elements so that the dataset only includes examples according to the filter function.
+        Apply a filter function to all the elements so that the dataset only includes examples according to the filter function. Elements for which the function returns False will be removed.
         Args:
             function (:obj:`Callable`): Callable with the following signatures:
-                - ``function(example: Union[Dict, Any]) -> bool`` if ``with_indices=False, batched=False``
+                - ``function(example: Union[Dict, Any]) -> bool``
         """
         ex_iterable = FilterExamplesIterable(self._ex_iterable, function)
         return iterable_dataset(
